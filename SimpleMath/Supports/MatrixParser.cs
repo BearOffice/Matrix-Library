@@ -62,7 +62,8 @@ namespace SimpleMath.Supports
                 input => parserule[typeof(T)].Invoke(input) :
                 input => "\"" + Escape(parserule[typeof(T)].Invoke(input)) + "\"";
 
-            var matrixstr = "[";
+            var sb = new StringBuilder();
+            sb.Append('[');
 
             matrix.Iterateii((t, i, j) =>
             {
@@ -71,24 +72,23 @@ namespace SimpleMath.Supports
                 if (j == 0)
                 {
                     if (j == matrix.ColumnsNum - 1)
-                        matrixstr += i == matrix.RowsNum - 1 ? $"[{str}]" : $"[{str}]\n ";
+                        sb.Append(i == matrix.RowsNum - 1 ? $"[{str}]" : $"[{str}]\n ");
                     else
-                        matrixstr += $"[{str}, ";
+                        sb.Append($"[{str}, ");
                 }
                 else if (j == matrix.ColumnsNum - 1)
                 {
-                    matrixstr += i == matrix.RowsNum - 1 ? $"{str}]" : $"{str}]\n ";
+                    sb.Append(i == matrix.RowsNum - 1 ? $"{str}]" : $"{str}]\n ");
                 }
                 else
                 {
-                    matrixstr += $"{str}, ";
+                    sb.Append($"{str}, ");
                 }
             });
 
-            matrixstr += "]";
+            sb.Append(']');
 
-            return matrixstr;
-            
+            return sb.ToString();
         }
             
         private static bool IsEscapechar(char ch)
