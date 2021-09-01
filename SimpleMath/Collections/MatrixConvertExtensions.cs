@@ -16,5 +16,11 @@ namespace SimpleMath.Collections
 
         public static DoubleMatrix ToDoubleMatrix(this MatrixSeq<double> matrixseq)
             => DoubleMatrix.CastFrom(matrixseq.ToMatrix());
+
+        public static FloatMatrix ToFloatMatrix(this Matrix<float> matrix)
+            => FloatMatrix.CastFrom(matrix);
+        
+        public static FloatMatrix ToFloatMatrix(this MatrixSeq<float> matrixseq)
+            => FloatMatrix.CastFrom(matrixseq.ToMatrix());
     }
 }
