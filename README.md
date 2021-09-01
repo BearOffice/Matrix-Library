@@ -41,7 +41,7 @@ Console.WriteLine(intmatrix2 + "\n");
 &nbsp;[74, 22]  
 &nbsp;[76, 82]]
 
-<br>Concat the right matrix to the left matrix's left.
+<br>Concat the right matrix to the left matrix's right.
 ```
 var intmatrix3 = intmatrix1 & intmatrix2;
 Console.WriteLine(intmatrix3 + "\n");
