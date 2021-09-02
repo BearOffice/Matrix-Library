@@ -25,7 +25,7 @@ var rand = new Random();
 intmatrix2 = intmatrix2.Set((_, _) => rand.Next(10, 99)).ToIntMatrix();
 Console.WriteLine(intmatrix2 + "\n");
 
-// Concat the right matrix to the left matrix's left.
+// Concat the right matrix to the left matrix's right.
 var intmatrix3 = intmatrix1 & intmatrix2;
 Console.WriteLine(intmatrix3 + "\n");
 

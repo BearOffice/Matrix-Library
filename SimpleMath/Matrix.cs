@@ -58,22 +58,6 @@ namespace SimpleMath
         public void Iterate(Action<T> iterator)
             => Iterateii((t, _, _) => iterator.Invoke(t));
 
-        public T[] Convert1DMatrixToArray()
-        {
-            if (RowsNum != 1 && ColumnsNum != 1)
-                throw new MatrixCalcException("The Matrix's dimension is not one.");
-
-            var array = new T[Length];
-            var count = 0;
-            Iterate(t =>
-            {
-                array[count] = t;
-                count++;
-            });
-
-            return array;
-        }
-
         public bool IsNumeric()
             => Matrix.IsNumeric(this.GetType());
 
@@ -111,6 +95,22 @@ namespace SimpleMath
                 });
 
             return !(hasnum == null);
+        }
+
+        public static T[] Convert1DMatrixToArray<T>(Matrix<T> matrix)
+        {
+            if (matrix.RowsNum != 1 && matrix.ColumnsNum != 1)
+                throw new ArgumentException("The Matrix's dimension is not one.");
+            
+            var array = new T[matrix.Length];
+            var count = 0;
+            matrix.Iterate(t =>
+            {
+                array[count] = t;
+                count++;
+            });
+
+            return array;
         }
 
         public static Matrix<T> GetMatrixFromString<T>(string matrixstr, ParseFromString parserule)
