@@ -13,7 +13,9 @@ var matrix1 = new Matrix<string>(new[,]
 Console.WriteLine(matrix1 + "\n");
 
 // Queries(extended methods) from class MathQ support lazy evaluation.
-var matrixseq = matrix1.Transpose().Map(str => int.Parse(str[0..^1]));
+// .AsParallel() will let the remaining methods executed parallelly if needed.
+// .AsParallel(force: true) will force the remaining methods executed parallely.
+var matrixseq = matrix1.AsParallel().Transpose().Map(str => int.Parse(str[0..^1]));
 matrix1[0, 0] = "21b";
 // Call .ToMatrix() will evaluate the sequence immediately.
 var intmatrix1 = matrixseq.ToIntMatrix();

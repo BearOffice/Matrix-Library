@@ -18,8 +18,10 @@ Console.WriteLine(matrix1 + "\n");
 &nbsp;["98f", "32d", "75e"]]  
 
 <br>Queries(extended methods) from class MathQ support lazy evaluation.  
+.AsParallel() will let the remaining methods executed parallelly if needed.  
+.AsParallel(force: true) will force the remaining methods executed parallely.  
 ```
-var matrixseq = matrix1.Transpose().Map(str => int.Parse(str[0..^1]));
+var matrixseq = matrix1.AsParallel().Transpose().Map(str => int.Parse(str[0..^1]));
 matrix1[0, 0] = "21b";
 
 // Call .ToMatrix() will evaluate the sequence immediately.

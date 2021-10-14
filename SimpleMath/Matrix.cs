@@ -18,11 +18,7 @@ namespace SimpleMath
         public Matrix(T[] array)
         {
             var newarray = new T[1, array.Length];
-
-            for (var i = 0; i < array.Length; i++)
-            {
-                newarray[0, i] = array[i];
-            }
+            ParallelArrayProjector.AutoFor(newarray, (_, j) => array[j]);
 
             _sourceArray = newarray;
         }
@@ -102,15 +98,14 @@ namespace SimpleMath
             if (matrix.RowsNum != 1 && matrix.ColumnsNum != 1)
                 throw new ArgumentException("The Matrix's dimension is not one.");
             
-            var array = new T[matrix.Length];
-            var count = 0;
-            matrix.Iterate(t =>
-            {
-                array[count] = t;
-                count++;
-            });
+            var newarray = new T[matrix.Length];
 
-            return array;
+            if (matrix.RowsNum == 1)
+                ParallelArrayProjector.AutoFor(newarray, i => matrix[0, i]);
+            else
+                ParallelArrayProjector.AutoFor(newarray, i => matrix[i, 0]);
+
+            return newarray;
         }
 
         public static Matrix<T> GetMatrixFromString<T>(string matrixstr, ParseFromString parserule)
@@ -127,21 +122,11 @@ namespace SimpleMath
 
             var newarray = new T[rowsnum, columnsnum];
 
-            for (var i = 0; i < matrixt.RowsNum; i++)
-            {
-                for (var j = 0; j < columnsnum; j++)
-                {
-                    newarray[i, j] = matrixt[i, j];
-                }
-            }
+            ParallelArrayProjector.AutoFor(newarray, (0, 0), (matrixt.RowsNum, columnsnum), 
+                (i, j) => matrixt[i, j]);
 
-            for (var i = matrixt.RowsNum; i < rowsnum; i++)
-            {
-                for (var j = 0; j < columnsnum; j++)
-                {
-                    newarray[i, j] = matrixb[i - matrixt.RowsNum, j];
-                }
-            }
+            ParallelArrayProjector.AutoFor(newarray, (matrixt.RowsNum, 0), (rowsnum, columnsnum), 
+                (i, j) => matrixb[i - matrixt.RowsNum, j]);
 
             return new(newarray);
         }
@@ -157,21 +142,11 @@ namespace SimpleMath
 
             var newarray = new T[rowsnum, columnsnum];
 
-            for (var i = 0; i < rowsnum; i++)
-            {
-                for (var j = 0; j < matrixl.ColumnsNum; j++)
-                {
-                    newarray[i, j] = matrixl[i, j];
-                }
-            }
+            ParallelArrayProjector.AutoFor(newarray, (0, 0), (rowsnum, matrixl.ColumnsNum), 
+                (i, j) => matrixl[i, j]);
 
-            for (var i = 0; i < rowsnum; i++)
-            {
-                for (var j = matrixl.ColumnsNum; j < columnsnum; j++)
-                {
-                    newarray[i, j] = matrixr[i, j - matrixl.ColumnsNum];
-                }
-            }
+            ParallelArrayProjector.AutoFor(newarray, (0, matrixl.ColumnsNum), (rowsnum, columnsnum), 
+                (i, j) => matrixr[i, j - matrixl.ColumnsNum]);
 
             return new(newarray);
         }

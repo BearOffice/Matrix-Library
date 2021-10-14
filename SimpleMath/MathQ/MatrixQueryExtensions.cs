@@ -7,6 +7,9 @@ namespace SimpleMath.MathQ
         public static Matrix<T> ToMatrix<T>(this MatrixSeq<T> matrixseq)
              => matrixseq.GetGenerator().ToSeq() as Matrix<T>;
 
+        public static MatrixSeq<T> AsParallel<T>(this MatrixSeq<T> matrixseq, bool force = false)
+            => matrixseq.AsParallelFunc(force);
+
         public static MatrixSeq<U> Mapii<T, U>(this MatrixSeq<T> matrixseq, 
             Func<T, int, int, U> mapper)
              => matrixseq.MapiiFunc(mapper);

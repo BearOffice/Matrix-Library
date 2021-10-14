@@ -38,7 +38,10 @@ namespace SimpleMath.Collections
             if (left.RowsNum != right.RowsNum || left.ColumnsNum != right.ColumnsNum)
                 throw new MatrixCalcException("Invalid calculation.");
 
-            return left.Mapii((t, i, j) => t + right[i, j]).ToDoubleMatrix();
+            var newarray = new double[left.RowsNum, left.ColumnsNum];
+            ParallelArrayProjector.AutoFor(newarray, (i, j) => left[i, j] + right[i, j]);
+
+            return new DoubleMatrix(newarray);
         }
 
         public static DoubleMatrix operator -(DoubleMatrix left, DoubleMatrix right)
@@ -46,7 +49,10 @@ namespace SimpleMath.Collections
             if (left.RowsNum != right.RowsNum || left.ColumnsNum != right.ColumnsNum)
                 throw new MatrixCalcException("Invalid calculation.");
 
-            return left.Mapii((t, i, j) => t - right[i, j]).ToDoubleMatrix();
+            var newarray = new double[left.RowsNum, left.ColumnsNum];
+            ParallelArrayProjector.AutoFor(newarray, (i, j) => left[i, j] - right[i, j]);
+
+            return new DoubleMatrix(newarray);
         }
 
         public static DoubleMatrix operator *(DoubleMatrix left, DoubleMatrix right)
@@ -54,22 +60,29 @@ namespace SimpleMath.Collections
             if (left.ColumnsNum != right.RowsNum)
                 throw new MatrixCalcException("Invalid calculation.");
 
-            return new DoubleMatrix(left.RowsNum, right.ColumnsNum)
-                .Set((i, j) =>
+            var newarray = new double[left.RowsNum, right.ColumnsNum];
+            ParallelArrayProjector.AutoFor(newarray, (i, j) => 
+            {
+                var num = left[i, 0] * right[0, j];
+
+                for (var k = 1; k < left.ColumnsNum; k++)
                 {
-                    var num = left[i, 0] * right[0, j];
+                    num += left[i, k] * right[k, j];
+                }
 
-                    for (var k = 1; k < left.ColumnsNum; k++)
-                    {
-                        num += left[i, k] * right[k, j];
-                    }
+                return num;
+            }, calccost: left.ColumnsNum);
 
-                    return num;
-                }).ToDoubleMatrix();
+            return new DoubleMatrix(newarray);
         }
 
         public static DoubleMatrix operator *(double left, DoubleMatrix right)
-            => right.Map(t => left * t).ToDoubleMatrix();
+        {
+            var newarray = new double[right.RowsNum, right.ColumnsNum];
+            ParallelArrayProjector.AutoFor(newarray, (i, j) => left * right[i, j]);
+
+            return new DoubleMatrix(newarray);
+        }
 
         public static DoubleMatrix ConcatTopAndBottom(DoubleMatrix matrixt, DoubleMatrix matrixb)
             => Matrix.ConcatTopAndBottom(matrixt, matrixb).ToDoubleMatrix();

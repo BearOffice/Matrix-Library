@@ -5,27 +5,44 @@ namespace SimpleMath
 {
     public interface IGenerator<T>
     {
+        public CalculateMode CalculateMode { get; }
         public ISequence<T> ToSeq();
     }
 
-    public class CloneGenerator<T> : IGenerator<T>
+    internal class CloneGenerator<T> : IGenerator<T>
     {
         private readonly ISequence<T> _seq;
+        public CalculateMode CalculateMode { get => CalculateMode.Series; }
 
-        public CloneGenerator(ISequence<T> seq)
+        internal CloneGenerator(ISequence<T> seq)
             => _seq = seq;
 
         public ISequence<T> ToSeq()
             => _seq.Clone() as ISequence<T>;
     }
-
-    public class MapiiGenerator<T, U> : IGenerator<U>
+    
+    internal class ParallelGenerator<T> : IGenerator<T>
     {
         private readonly IGenerator<T> _prevGenerator;
+        public CalculateMode CalculateMode { get; }
+        
+        internal ParallelGenerator(ISequence<T> seq, bool force)
+        {
+            _prevGenerator = seq.GetGenerator();
+            CalculateMode = force ? CalculateMode.Parallel : CalculateMode.Auto;
+        }
 
+        public ISequence<T> ToSeq()
+            => _prevGenerator.ToSeq();
+    }
+
+    internal class MapiiGenerator<T, U> : IGenerator<U>
+    {
+        private readonly IGenerator<T> _prevGenerator;
         private readonly Func<T, int, int, U> _mapper;
+        public CalculateMode CalculateMode { get => _prevGenerator.CalculateMode; }
 
-        public MapiiGenerator(MatrixSeq<T> matrixseq, Func<T, int, int, U> mapper)
+        internal MapiiGenerator(MatrixSeq<T> matrixseq, Func<T, int, int, U> mapper)
         {
             _prevGenerator = matrixseq.GetGenerator();
             _mapper = mapper;
@@ -36,24 +53,19 @@ namespace SimpleMath
             var matrix = _prevGenerator.ToSeq() as Matrix<T>;
 
             var newarray = new U[matrix.RowsNum, matrix.ColumnsNum];
-
-            for (var i = 0; i < matrix.RowsNum; i++)
-            {
-                for (var j = 0; j < matrix.ColumnsNum; j++)
-                {
-                    newarray[i, j] = _mapper.Invoke(matrix[i, j], i, j);
-                }
-            }
+            ParallelArrayProjector.For(newarray, (i, j) =>
+                _mapper.Invoke(matrix[i, j], i, j), CalculateMode);
 
             return new Matrix<U>(newarray);
         }
     }
 
-    public class TransposeGenerator<T> : IGenerator<T>
+    internal class TransposeGenerator<T> : IGenerator<T>
     {
         private readonly IGenerator<T> _prevGenerator;
-        
-        public TransposeGenerator(MatrixSeq<T> matrixseq)
+        public CalculateMode CalculateMode { get => _prevGenerator.CalculateMode; }
+
+        internal TransposeGenerator(MatrixSeq<T> matrixseq)
             => _prevGenerator = matrixseq.GetGenerator();
         
         public ISequence<T> ToSeq()
@@ -61,25 +73,19 @@ namespace SimpleMath
             var matrix = _prevGenerator.ToSeq() as Matrix<T>;
 
             var newarray = new T[matrix.ColumnsNum, matrix.RowsNum];
-
-            for (var i = 0; i < matrix.ColumnsNum; i++)
-            {
-                for (var j = 0; j < matrix.RowsNum; j++)
-                {
-                    newarray[i, j] = matrix[j, i];
-                }
-            }
+            ParallelArrayProjector.For(newarray, (i, j) => matrix[j, i], CalculateMode);
 
             return new Matrix<T>(newarray);
         }
     }
-    
-    public class ZipGenerator<T, U> : IGenerator<(T, U)>
+
+    internal class ZipGenerator<T, U> : IGenerator<(T, U)>
     {
         private readonly IGenerator<T> _prevGeneratorL;
         private readonly IGenerator<U> _prevGeneratorR;
+        public CalculateMode CalculateMode { get => _prevGeneratorL.CalculateMode ; }
 
-        public ZipGenerator(MatrixSeq<T> matrixseql, MatrixSeq<U> matrixseqr)
+        internal ZipGenerator(MatrixSeq<T> matrixseql, MatrixSeq<U> matrixseqr)
         {
             _prevGeneratorL = matrixseql.GetGenerator();
             _prevGeneratorR = matrixseqr.GetGenerator();
@@ -94,26 +100,21 @@ namespace SimpleMath
                 throw new MatrixCalcException("Invalid calculation.");
 
             var newarray = new (T, U)[matrixl.RowsNum, matrixl.ColumnsNum];
-
-            for (var i = 0; i < matrixl.RowsNum; i++)
-            {
-                for (var j = 0; j < matrixl.ColumnsNum; j++)
-                {
-                    newarray[i, j] = (matrixl[i, j], matrixr[i, j]);
-                }
-            }
+            ParallelArrayProjector.For(newarray, (i, j) =>
+                (matrixl[i, j], matrixr[i, j]), CalculateMode);
 
             return new Matrix<(T, U)>(newarray);
         }
     }
 
-    public class CropGenerator<T> : IGenerator<T>
+    internal class CropGenerator<T> : IGenerator<T>
     {
         private readonly IGenerator<T> _prevGenerator;
         private readonly (int, int) _startPos;
         private readonly (int, int) _endPos;
+        public CalculateMode CalculateMode { get => _prevGenerator.CalculateMode; }
 
-        public CropGenerator(MatrixSeq<T> matrixseq, (int, int) startpos, (int, int) endpos)
+        internal CropGenerator(MatrixSeq<T> matrixseq, (int, int) startpos, (int, int) endpos)
         {
             _prevGenerator = matrixseq.GetGenerator();
 
@@ -127,7 +128,7 @@ namespace SimpleMath
             _endPos = endpos;
         }
 
-        public CropGenerator(MatrixSeq<T> matrixseq, int pos, bool isrow)
+        internal CropGenerator(MatrixSeq<T> matrixseq, int pos, bool isrow)
         {
             _prevGenerator = matrixseq.GetGenerator();
 
@@ -160,14 +161,8 @@ namespace SimpleMath
             var columnsrange = columnsendpos - columnsoffset + 1;
 
             var newarray = new T[rowsrange, columnsrange];
-
-            for (var i = 0; i < rowsrange; i++)
-            {
-                for (var j = 0; j < columnsrange; j++)
-                {
-                    newarray[i, j] = matrix[i + rowsoffset, j + columnsoffset];
-                }
-            }
+            ParallelArrayProjector.For(newarray, (i, j) =>
+                matrix[i + rowsoffset, j + columnsoffset], CalculateMode);
 
             return new Matrix<T>(newarray);
         }

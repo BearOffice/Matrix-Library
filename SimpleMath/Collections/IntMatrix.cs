@@ -37,8 +37,11 @@ namespace SimpleMath.Collections
         {
             if (left.RowsNum != right.RowsNum || left.ColumnsNum != right.ColumnsNum)
                 throw new MatrixCalcException("Invalid calculation.");
-            
-            return left.Mapii((t, i, j) => t + right[i, j]).ToIntMatrix();
+
+            var newarray = new int[left.RowsNum, left.ColumnsNum];
+            ParallelArrayProjector.AutoFor(newarray, (i, j) => left[i, j] + right[i, j]);
+
+            return new IntMatrix(newarray);
         }
 
         public static IntMatrix operator -(IntMatrix left, IntMatrix right)
@@ -46,7 +49,10 @@ namespace SimpleMath.Collections
             if (left.RowsNum != right.RowsNum || left.ColumnsNum != right.ColumnsNum)
                 throw new MatrixCalcException("Invalid calculation.");
 
-            return left.Mapii((t, i, j) => t - right[i, j]).ToIntMatrix();
+            var newarray = new int[left.RowsNum, left.ColumnsNum];
+            ParallelArrayProjector.AutoFor(newarray, (i, j) => left[i, j] - right[i, j]);
+
+            return new IntMatrix(newarray);
         }
 
         public static IntMatrix operator *(IntMatrix left, IntMatrix right)
@@ -55,6 +61,7 @@ namespace SimpleMath.Collections
                 throw new MatrixCalcException("Invalid calculation.");
 
             return new IntMatrix(left.RowsNum, right.ColumnsNum)
+                .AsParallel()
                 .Set((i, j) =>
                 {
                     var num = left[i, 0] * right[0, j];
@@ -69,7 +76,12 @@ namespace SimpleMath.Collections
         }
 
         public static IntMatrix operator *(int left, IntMatrix right)
-            => right.Map(t => left * t).ToIntMatrix();
+        {
+            var newarray = new int[right.RowsNum, right.ColumnsNum];
+            ParallelArrayProjector.AutoFor(newarray, (i, j) => left * right[i, j]);
+
+            return new IntMatrix(newarray);
+        }
 
         public static IntMatrix ConcatTopAndBottom(IntMatrix matrixt, IntMatrix matrixb)
             => Matrix.ConcatTopAndBottom(matrixt, matrixb).ToIntMatrix();
